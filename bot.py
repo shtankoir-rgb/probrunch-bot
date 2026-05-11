@@ -73,43 +73,54 @@ async def handle_messages(message: types.Message):
     user_id = message.from_user.id
     text = message.text or ""
 
-    # ---------- ПИТАННЯ ----------
+    # --- КРОК 1. ГІСТ НАТИСНУВ "ПИТАННЯ" ---
     if "Питання" in text:
         waiting_for_question.add(user_id)
         await message.answer(
-            "Напишіть ваше питання ✍️\n"
+            "✍️ Напишіть ваше питання.\n"
             "Модератор відповість вам особисто."
         )
         return
 
-    # ---------- ТЕКСТ ПИТАННЯ ----------
+    # --- КРОК 2. ГІСТ НАПИСАВ ПИТАННЯ ---
     if user_id in waiting_for_question:
         waiting_for_question.remove(user_id)
+
+        moderator_keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="✉️ Написати гостю напряму",
+                        url=f"https://t.me/user?id={user_id}"
+                    )
+                ]
+            ]
+        )
+
         await bot.send_message(
             MODERATOR_ID,
-            f"❓ Питання від:\n"
+            f"❓ ПИТАННЯ ВІД ГОСТЯ\n\n"
             f"{message.from_user.full_name}\n"
             f"(id: {user_id})\n\n"
-            f"{text}"
+            f"{text}\n\n"
+            f"⬇️ Відповідайте:\n"
+            f"• reply на це повідомлення — відповідь через бота\n"
+            f"• або кнопкою нижче — напряму гостю",
+            reply_markup=moderator_keyboard
         )
+
         await message.answer("✅ Дякуємо! Питання передано модератору.")
         return
 
-    # ---------- ПРОГРАМА ----------
+    # --- КРОК 3. КНОПКИ МЕНЮ ---
     if "Програма" in text:
-        await message.answer_photo(
-            FSInputFile("files/program.jpg")
-        )
+        await message.answer_photo(FSInputFile("files/program.jpg"))
         return
 
-    # ---------- МАПА ----------
     if "Точка" in text:
-        await message.answer(
-            f"📍 Локація заходу:\n{MAP_LINK}"
-        )
+        await message.answer(f"📍 Локація заходу:\n{MAP_LINK}")
         return
 
-    # ---------- КОРИСНА ІНФОРМАЦІЯ ----------
     if "Корисна" in text:
         await message.answer(
             "Оберіть, будь ласка, що вас цікавить 👇",
@@ -117,13 +128,13 @@ async def handle_messages(message: types.Message):
         )
         return
 
-    # ---------- ВІДПОВІДЬ МОДЕРАТОРА ----------
+    # --- КРОК 4. REPLY ВІД МОДЕРАТОРА ---
     if user_id == MODERATOR_ID and message.reply_to_message:
-        if "id:" in message.reply_to_message.text:
+        if "(id:" in message.reply_to_message.text:
             try:
                 uid = int(
                     message.reply_to_message.text
-                    .split("id:")[1]
+                    .split("(id:")[1]
                     .split(")")[0]
                 )
                 await bot.send_message(
@@ -137,16 +148,12 @@ async def handle_messages(message: types.Message):
 
 @dp.callback_query(lambda c: c.data == "wine")
 async def send_wine(call: types.CallbackQuery):
-    await call.message.answer_document(
-        FSInputFile("files/wine.pdf")
-    )
+    await call.message.answer_document(FSInputFile("files/wine.pdf"))
     await call.answer()
 
 @dp.callback_query(lambda c: c.data == "products")
 async def send_products(call: types.CallbackQuery):
-    await call.message.answer_document(
-        FSInputFile("files/products.pdf")
-    )
+    await call.message.answer_document(FSInputFile("files/products.pdf"))
     await call.answer()
 
 # ================== FLASK ==================
