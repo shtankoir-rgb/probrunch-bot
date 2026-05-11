@@ -20,7 +20,7 @@ MODERATOR_ID = int(os.getenv("MODERATOR_ID"))
 
 MAP_LINK = "https://maps.app.goo.gl/d5cZUQbqf8exr11X7"
 
-# ================== BOT ==================
+# ================== INIT ==================
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
@@ -50,7 +50,7 @@ useful_keyboard = InlineKeyboardMarkup(
 
 @dp.message(Command("start"))
 async def start(message: types.Message):
-    text = (
+    start_text = (
         "Вітаємо у чат-боті PRO BRUNCH від METRO 🍷\n\n"
         "Раді бачити вас серед гостей нашого бранчу!\n\n"
         "Тут ви знайдете:\n"
@@ -63,20 +63,20 @@ async def start(message: types.Message):
         "До зустрічі на PRO BRUNCH ✨"
     )
 
-    await message.answer(text, reply_markup=main_keyboard)
+    await message.answer(start_text, reply_markup=main_keyboard)
     await message.answer_photo(FSInputFile("files/invitation.jpg"))
 
-# ================== MAIN LOGIC ==================
+# ================== MAIN HANDLER ==================
 
 @dp.message()
 async def handle_messages(message: types.Message):
     user_id = message.from_user.id
-    text = message.text
+    text = message.text or ""
 
-    # -------- GUEST --------
+    # ---------- ГОСТІ ----------
     if user_id != MODERATOR_ID:
 
-        if text == "❓ Питання / відповіді":
+        if "Питання" in text:
             waiting_for_question.add(user_id)
             await message.answer(
                 "Напишіть ваше питання ✍️\n"
@@ -94,23 +94,23 @@ async def handle_messages(message: types.Message):
             )
             await message.answer("✅ Дякуємо! Питання передано модератору.")
 
-        elif text == "📄 Програма":
+        elif "Програма" in text:
             await message.answer_photo(
                 FSInputFile("files/program.jpg")
             )
 
-        elif text == "📍 Точка на мапі":
+        elif "Точка" in text:
             await message.answer(
                 f"📍 Локація заходу:\n{MAP_LINK}"
             )
 
-        elif text == "🍷 Корисна інформація":
+        elif "Корисна" in text:
             await message.answer(
                 "Оберіть, будь ласка, що вас цікавить 👇",
                 reply_markup=useful_keyboard
             )
 
-    # -------- MODERATOR --------
+    # ---------- МОДЕРАТОР ----------
     else:
         if message.reply_to_message and "id:" in message.reply_to_message.text:
             try:
@@ -131,18 +131,18 @@ async def handle_messages(message: types.Message):
 @dp.callback_query(lambda c: c.data == "wine")
 async def send_wine(call: types.CallbackQuery):
     await call.message.answer_photo(
-        FSInputFile("files/wine.jpg")
+        FSInputFile("files/wine.pdf")
     )
     await call.answer()
 
 @dp.callback_query(lambda c: c.data == "products")
 async def send_products(call: types.CallbackQuery):
     await call.message.answer_photo(
-        FSInputFile("files/products.jpg")
+        FSInputFile("files/products.pdf")
     )
     await call.answer()
 
-# ================== FLASK (FOR RENDER) ==================
+# ================== FLASK (RENDER FREE) ==================
 
 app = Flask(__name__)
 
