@@ -73,8 +73,12 @@ async def handle_messages(message: types.Message):
     user_id = message.from_user.id
     text = message.text or ""
 
-    # --- 1. ГОСТЬ НАТИСНУВ "ПИТАННЯ" ---
+    # --- 1. КНОПКА "ПИТАННЯ / ВІДПОВІДІ" ---
     if "Питання" in text:
+        # ✅ якщо користувач уже в режимі питання — НІЧОГО не робимо
+        if user_id in waiting_for_question:
+            return
+
         waiting_for_question.add(user_id)
         await message.answer(
             "✍️ Напишіть ваше питання.\n"
@@ -82,7 +86,7 @@ async def handle_messages(message: types.Message):
         )
         return
 
-    # --- 2. ГОСТЬ НАПИСАВ ПИТАННЯ ---
+    # --- 2. КОРИСТУВАЧ ПИШЕ САМЕ ПИТАННЯ ---
     if user_id in waiting_for_question:
         waiting_for_question.remove(user_id)
 
@@ -142,7 +146,7 @@ async def send_products(call: types.CallbackQuery):
     await call.message.answer_document(FSInputFile("files/products.pdf"))
     await call.answer()
 
-# ================== FLASK (RENDER FREE) ==================
+# ================== FLASK ==================
 
 app = Flask(__name__)
 
