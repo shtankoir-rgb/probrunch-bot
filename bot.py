@@ -73,7 +73,7 @@ async def handle_messages(message: types.Message):
     user_id = message.from_user.id
     text = message.text or ""
 
-    # --- КРОК 1. ГІСТ НАТИСНУВ "ПИТАННЯ" ---
+    # --- 1. ГОСТЬ НАТИСНУВ "ПИТАННЯ" ---
     if "Питання" in text:
         waiting_for_question.add(user_id)
         await message.answer(
@@ -82,20 +82,9 @@ async def handle_messages(message: types.Message):
         )
         return
 
-    # --- КРОК 2. ГІСТ НАПИСАВ ПИТАННЯ ---
+    # --- 2. ГОСТЬ НАПИСАВ ПИТАННЯ ---
     if user_id in waiting_for_question:
         waiting_for_question.remove(user_id)
-
-        moderator_keyboard = InlineKeyboardMarkup(
-            inline_keyboard=[
-                [
-                    InlineKeyboardButton(
-                        text="✉️ Написати гостю напряму",
-                        url=f"https://t.me/user?id={user_id}"
-                    )
-                ]
-            ]
-        )
 
         await bot.send_message(
             MODERATOR_ID,
@@ -103,16 +92,13 @@ async def handle_messages(message: types.Message):
             f"{message.from_user.full_name}\n"
             f"(id: {user_id})\n\n"
             f"{text}\n\n"
-            f"⬇️ Відповідайте:\n"
-            f"• reply на це повідомлення — відповідь через бота\n"
-            f"• або кнопкою нижче — напряму гостю",
-            reply_markup=moderator_keyboard
+            f"⬇️ Щоб відповісти гостю, натисніть REPLY на це повідомлення"
         )
 
         await message.answer("✅ Дякуємо! Питання передано модератору.")
         return
 
-    # --- КРОК 3. КНОПКИ МЕНЮ ---
+    # --- 3. КНОПКИ МЕНЮ ---
     if "Програма" in text:
         await message.answer_photo(FSInputFile("files/program.jpg"))
         return
@@ -128,7 +114,7 @@ async def handle_messages(message: types.Message):
         )
         return
 
-    # --- КРОК 4. REPLY ВІД МОДЕРАТОРА ---
+    # --- 4. ВІДПОВІДЬ МОДЕРАТОРА ЧЕРЕЗ REPLY ---
     if user_id == MODERATOR_ID and message.reply_to_message:
         if "(id:" in message.reply_to_message.text:
             try:
@@ -156,7 +142,7 @@ async def send_products(call: types.CallbackQuery):
     await call.message.answer_document(FSInputFile("files/products.pdf"))
     await call.answer()
 
-# ================== FLASK ==================
+# ================== FLASK (RENDER FREE) ==================
 
 app = Flask(__name__)
 
