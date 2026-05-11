@@ -12,8 +12,8 @@ from aiogram.types import (
 
 # ================= НАСТРОЙКИ =================
 
-BOT_TOKEN = os.getenv(8769338541:AAHPfa75-9kLgn0WqSzYUhG7ORsL5Ya1004)           # токен від BotFather
-MODERATOR_ID = int(os.getenv(389322406))  # Telegram ID модератора
+BOT_TOKEN = os.getenv("BOT_TOKEN")           # токен від BotFather
+MODERATOR_ID = (os.getenv("MODERATOR_ID"))  # Telegram ID модератора
 
 MAP_LINK = "https://maps.app.goo.gl/d5cZUQbqf8exr11X7"
 
