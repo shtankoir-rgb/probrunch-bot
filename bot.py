@@ -16,7 +16,10 @@ from aiogram.types import (
 # ================== ENV ==================
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-MODERATOR_ID = int(os.getenv("MODERATOR_ID"))
+
+MODERATOR_IDS = [
+    int(x) for x in os.getenv("MODERATOR_IDS", "").split(",") if x
+]
 
 MAP_LINK = "https://maps.app.goo.gl/d5cZUQbqf8exr11X7"
 
@@ -50,20 +53,12 @@ useful_keyboard = InlineKeyboardMarkup(
 
 @dp.message(Command("start"))
 async def start(message: types.Message):
-    start_text = (
+    await message.answer(
         "Вітаємо у чат-боті PRO BRUNCH від METRO 🍷\n\n"
         "Раді бачити вас серед гостей нашого бранчу!\n\n"
-        "Тут ви знайдете:\n"
-        "• програму вечора\n"
-        "• точку локації на мапі\n"
-        "• корисну інформацію\n\n"
-        "А якщо у вас виникнуть будь-які запитання —\n"
-        "просто натисніть «❓ Питання / відповіді»,\n"
-        "і ми з радістю допоможемо.\n\n"
-        "До зустрічі на PRO BRUNCH ✨"
+        "Оберіть потрібний розділ у меню 👇",
+        reply_markup=main_keyboard
     )
-
-    await message.answer(start_text, reply_markup=main_keyboard)
     await message.answer_photo(FSInputFile("files/invitation.jpg"))
 
 # ================== MAIN HANDLER ==================
@@ -73,12 +68,10 @@ async def handle_messages(message: types.Message):
     user_id = message.from_user.id
     text = message.text or ""
 
-    # --- 1. КНОПКА "ПИТАННЯ / ВІДПОВІДІ" ---
+    # --- ПИТАННЯ ---
     if "Питання" in text:
-        # ✅ якщо користувач уже в режимі питання — НІЧОГО не робимо
         if user_id in waiting_for_question:
             return
-
         waiting_for_question.add(user_id)
         await message.answer(
             "✍️ Напишіть ваше питання.\n"
@@ -86,23 +79,24 @@ async def handle_messages(message: types.Message):
         )
         return
 
-    # --- 2. КОРИСТУВАЧ ПИШЕ САМЕ ПИТАННЯ ---
+    # --- ТЕКСТ ПИТАННЯ ---
     if user_id in waiting_for_question:
         waiting_for_question.remove(user_id)
 
-        await bot.send_message(
-            MODERATOR_ID,
-            f"❓ ПИТАННЯ ВІД ГОСТЯ\n\n"
-            f"{message.from_user.full_name}\n"
-            f"(id: {user_id})\n\n"
-            f"{text}\n\n"
-            f"⬇️ Щоб відповісти гостю, натисніть REPLY на це повідомлення"
-        )
+        for mod_id in MODERATOR_IDS:
+            await bot.send_message(
+                mod_id,
+                f"❓ ПИТАННЯ ВІД ГОСТЯ\n\n"
+                f"{message.from_user.full_name}\n"
+                f"(id: {user_id})\n\n"
+                f"{text}\n\n"
+                f"⬇️ Щоб відповісти гостю, натисніть REPLY"
+            )
 
-        await message.answer("✅ Дякуємо! Питання передано модератору.")
+        await message.answer("✅ Дякуємо! Питання передано модераторам.")
         return
 
-    # --- 3. КНОПКИ МЕНЮ ---
+    # --- МЕНЮ ---
     if "Програма" in text:
         await message.answer_photo(FSInputFile("files/program.jpg"))
         return
@@ -118,8 +112,8 @@ async def handle_messages(message: types.Message):
         )
         return
 
-    # --- 4. ВІДПОВІДЬ МОДЕРАТОРА ЧЕРЕЗ REPLY ---
-    if user_id == MODERATOR_ID and message.reply_to_message:
+    # --- REPLY ВІД МОДЕРАТОРА ---
+    if user_id in MODERATOR_IDS and message.reply_to_message:
         if "(id:" in message.reply_to_message.text:
             try:
                 uid = int(
@@ -166,3 +160,4 @@ async def run_bot():
 if __name__ == "__main__":
     threading.Thread(target=run_flask).start()
     asyncio.run(run_bot())
+``
