@@ -53,12 +53,20 @@ useful_keyboard = InlineKeyboardMarkup(
 
 @dp.message(Command("start"))
 async def start(message: types.Message):
-    await message.answer(
-        "Вітаємо у чат-боті PRO BRUNCH від METRO 🍷\n\n"
+    start_text = (
+        "Вітаємо у чат-боті **PRO BRUNCH від METRO** 🍷\n\n"
         "Раді бачити вас серед гостей нашого бранчу!\n\n"
-        "Оберіть потрібний розділ у меню 👇",
-        reply_markup=main_keyboard
+        "Тут ви знайдете:\n"
+        "• програму вечора\n"
+        "• точку локації на мапі\n"
+        "• корисну інформацію\n\n"
+        "А якщо у вас виникнуть будь-які запитання —\n"
+        "просто натисніть «❓ Питання / відповіді»,\n"
+        "і ми з радістю допоможемо.\n\n"
+        "До зустрічі на **PRO BRUNCH** ✨"
     )
+
+    await message.answer(start_text, reply_markup=main_keyboard)
     await message.answer_photo(FSInputFile("files/invitation.jpg"))
 
 # ================== MAIN HANDLER ==================
@@ -68,7 +76,7 @@ async def handle_messages(message: types.Message):
     user_id = message.from_user.id
     text = message.text or ""
 
-    # --- ПИТАННЯ ---
+    # --- 1. КНОПКА "ПИТАННЯ / ВІДПОВІДІ" ---
     if "Питання" in text:
         if user_id in waiting_for_question:
             return
@@ -79,7 +87,7 @@ async def handle_messages(message: types.Message):
         )
         return
 
-    # --- ТЕКСТ ПИТАННЯ ---
+    # --- 2. ГОСТЬ НАПИСАВ ПИТАННЯ ---
     if user_id in waiting_for_question:
         waiting_for_question.remove(user_id)
 
@@ -90,13 +98,13 @@ async def handle_messages(message: types.Message):
                 f"{message.from_user.full_name}\n"
                 f"(id: {user_id})\n\n"
                 f"{text}\n\n"
-                f"⬇️ Щоб відповісти гостю, натисніть REPLY"
+                f"⬇️ Щоб відповісти гостю, натисніть REPLY на це повідомлення"
             )
 
-        await message.answer("✅ Дякуємо! Питання передано модераторам.")
+        await message.answer("✅ Дякуємо! Питання передано модератору.")
         return
 
-    # --- МЕНЮ ---
+    # --- 3. МЕНЮ ---
     if "Програма" in text:
         await message.answer_photo(FSInputFile("files/program.jpg"))
         return
@@ -112,7 +120,7 @@ async def handle_messages(message: types.Message):
         )
         return
 
-    # --- REPLY ВІД МОДЕРАТОРА ---
+    # --- 4. ВІДПОВІДЬ МОДЕРАТОРА ЧЕРЕЗ REPLY ---
     if user_id in MODERATOR_IDS and message.reply_to_message:
         if "(id:" in message.reply_to_message.text:
             try:
