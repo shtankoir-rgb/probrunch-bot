@@ -1,34 +1,25 @@
 import asyncio
 import os
 import threading
+import traceback
 
 from flask import Flask
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
-from aiogram.types import (
-    ReplyKeyboardMarkup,
-    KeyboardButton,
-    FSInputFile
-)
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, FSInputFile
 
-# ================== ENV ==================
+print("✅ bot.py loaded")
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-
-MODERATOR_IDS = [
-    int(x) for x in os.getenv("MODERATOR_IDS", "").split(",") if x
-]
-
+MODERATOR_IDS = [int(x) for x in os.getenv("MODERATOR_IDS", "").split(",") if x]
 MAP_LINK = "https://maps.app.goo.gl/d5cZUQbqf8exr11X7"
 
-# ================== INIT ==================
+print("✅ ENV loaded", MODERATOR_IDS)
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
 waiting_for_question = set()
-
-# ================== KEYBOARDS ==================
 
 main_keyboard = ReplyKeyboardMarkup(
     keyboard=[
@@ -40,96 +31,17 @@ main_keyboard = ReplyKeyboardMarkup(
     resize_keyboard=True
 )
 
-# ================== START ==================
-
 @dp.message(Command("start"))
 async def start(message: types.Message):
-    start_text = (
-        "Вітаємо у чат-боті PRO BRUNCH від METRO 🍷\n\n"
-        "Раді бачити вас серед гостей нашого бранчу!\n\n"
-        "Тут ви знайдете:\n"
-        "• програму вечора\n"
-        "• точку локації на мапі\n"
-        "• корисну інформацію\n\n"
-        "А якщо у вас виникнуть будь-які запитання —\n"
-        "просто натисніть «❓ Питання / відповіді»,\n"
-        "і ми з радістю допоможемо.\n\n"
-        "До зустрічі на PRO BRUNCH ✨"
+    await message.answer(
+        "Вітаємо у чат-боті PRO BRUNCH від METRO 🍷",
+        reply_markup=main_keyboard
     )
-
-    await message.answer(start_text, reply_markup=main_keyboard)
     await message.answer_photo(FSInputFile("files/invitation.jpg"))
-
-# ================== MAIN HANDLER ==================
 
 @dp.message()
 async def handle_messages(message: types.Message):
-    user_id = message.from_user.id
-    text = message.text or ""
-
-    # --- ПИТАННЯ ---
-    if "Питання" in text:
-        if user_id in waiting_for_question:
-            return
-        waiting_for_question.add(user_id)
-        await message.answer(
-            "✍️ Напишіть ваше питання.\n"
-            "Модератор відповість вам особисто."
-        )
-        return
-
-    # --- ТЕКСТ ПИТАННЯ ---
-    if user_id in waiting_for_question:
-        waiting_for_question.remove(user_id)
-
-        for mod_id in MODERATOR_IDS:
-            await bot.send_message(
-                mod_id,
-                f"❓ ПИТАННЯ ВІД ГОСТЯ\n\n"
-                f"{message.from_user.full_name}\n"
-                f"(id: {user_id})\n\n"
-                f"{text}\n\n"
-                f"⬇️ Щоб відповісти гостю, натисніть REPLY"
-            )
-
-        await message.answer("✅ Дякуємо! Питання передано модератору.")
-        return
-
-    # --- ПРОГРАМА ---
-    if "Програма" in text:
-        await message.answer_photo(FSInputFile("files/program.jpg"))
-        return
-
-    # --- МАПА ---
-    if "Точка" in text:
-        await message.answer(f"📍 Локація заходу:\n{MAP_LINK}")
-        return
-
-    # --- КОРИСНА ІНФОРМАЦІЯ (ЗАГЛУШКА) ---
-    if "Корисна" in text:
-        await message.answer(
-            "🍷 Невдовзі тут з'явиться корисна інформація.\n"
-            "Залишайтеся з нами ✨"
-        )
-        return
-
-    # --- REPLY ВІД МОДЕРАТОРА ---
-    if user_id in MODERATOR_IDS and message.reply_to_message:
-        if "(id:" in message.reply_to_message.text:
-            try:
-                uid = int(
-                    message.reply_to_message.text
-                    .split("(id:")[1]
-                    .split(")")[0]
-                )
-                await bot.send_message(
-                    uid,
-                    f"💬 Відповідь модератора:\n\n{message.text}"
-                )
-            except:
-                pass
-
-# ================== FLASK ==================
+    await message.answer("✅ бот живий")
 
 app = Flask(__name__)
 
@@ -139,14 +51,17 @@ def home():
 
 def run_flask():
     port = int(os.getenv("PORT", 10000))
+    print(f"✅ Flask starting on port {port}")
     app.run(host="0.0.0.0", port=port)
 
 async def run_bot():
+    print("✅ starting polling")
     await dp.start_polling(bot)
 
-# ================== START ==================
-
 if __name__ == "__main__":
-    threading.Thread(target=run_flask).start()
-    asyncio.run(run_bot())
-``
+    try:
+        threading.Thread(target=run_flask).start()
+        asyncio.run(run_bot())
+    except Exception:
+        print("❌ FATAL ERROR")
+        traceback.print_exc()
