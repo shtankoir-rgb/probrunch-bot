@@ -8,8 +8,6 @@ from aiogram.filters import Command
 from aiogram.types import (
     ReplyKeyboardMarkup,
     KeyboardButton,
-    InlineKeyboardMarkup,
-    InlineKeyboardButton,
     FSInputFile
 )
 
@@ -42,19 +40,12 @@ main_keyboard = ReplyKeyboardMarkup(
     resize_keyboard=True
 )
 
-useful_keyboard = InlineKeyboardMarkup(
-    inline_keyboard=[
-        [InlineKeyboardButton(text="🍷 Інформація про вина", callback_data="wine")],
-        [InlineKeyboardButton(text="📦 Інформація про товари", callback_data="products")]
-    ]
-)
-
 # ================== START ==================
 
 @dp.message(Command("start"))
 async def start(message: types.Message):
     start_text = (
-        "Вітаємо у чат-боті **PRO BRUNCH від METRO** 🍷\n\n"
+        "Вітаємо у чат-боті PRO BRUNCH від METRO 🍷\n\n"
         "Раді бачити вас серед гостей нашого бранчу!\n\n"
         "Тут ви знайдете:\n"
         "• програму вечора\n"
@@ -63,7 +54,7 @@ async def start(message: types.Message):
         "А якщо у вас виникнуть будь-які запитання —\n"
         "просто натисніть «❓ Питання / відповіді»,\n"
         "і ми з радістю допоможемо.\n\n"
-        "До зустрічі на **PRO BRUNCH** ✨"
+        "До зустрічі на PRO BRUNCH ✨"
     )
 
     await message.answer(start_text, reply_markup=main_keyboard)
@@ -76,7 +67,7 @@ async def handle_messages(message: types.Message):
     user_id = message.from_user.id
     text = message.text or ""
 
-    # --- 1. КНОПКА "ПИТАННЯ / ВІДПОВІДІ" ---
+    # --- ПИТАННЯ ---
     if "Питання" in text:
         if user_id in waiting_for_question:
             return
@@ -87,7 +78,7 @@ async def handle_messages(message: types.Message):
         )
         return
 
-    # --- 2. ГОСТЬ НАПИСАВ ПИТАННЯ ---
+    # --- ТЕКСТ ПИТАННЯ ---
     if user_id in waiting_for_question:
         waiting_for_question.remove(user_id)
 
@@ -98,29 +89,31 @@ async def handle_messages(message: types.Message):
                 f"{message.from_user.full_name}\n"
                 f"(id: {user_id})\n\n"
                 f"{text}\n\n"
-                f"⬇️ Щоб відповісти гостю, натисніть REPLY на це повідомлення"
+                f"⬇️ Щоб відповісти гостю, натисніть REPLY"
             )
 
         await message.answer("✅ Дякуємо! Питання передано модератору.")
         return
 
-    # --- 3. МЕНЮ ---
+    # --- ПРОГРАМА ---
     if "Програма" in text:
         await message.answer_photo(FSInputFile("files/program.jpg"))
         return
 
+    # --- МАПА ---
     if "Точка" in text:
         await message.answer(f"📍 Локація заходу:\n{MAP_LINK}")
         return
 
+    # --- КОРИСНА ІНФОРМАЦІЯ (ЗАГЛУШКА) ---
     if "Корисна" in text:
         await message.answer(
-            "Оберіть, будь ласка, що вас цікавить 👇",
-            reply_markup=useful_keyboard
+            "🍷 Невдовзі тут з'явиться корисна інформація.\n"
+            "Залишайтеся з нами ✨"
         )
         return
 
-    # --- 4. ВІДПОВІДЬ МОДЕРАТОРА ЧЕРЕЗ REPLY ---
+    # --- REPLY ВІД МОДЕРАТОРА ---
     if user_id in MODERATOR_IDS and message.reply_to_message:
         if "(id:" in message.reply_to_message.text:
             try:
@@ -135,18 +128,6 @@ async def handle_messages(message: types.Message):
                 )
             except:
                 pass
-
-# ================== CALLBACKS ==================
-
-@dp.callback_query(lambda c: c.data == "wine")
-async def send_wine(call: types.CallbackQuery):
-    await call.message.answer_document(FSInputFile("files/wine.pdf"))
-    await call.answer()
-
-@dp.callback_query(lambda c: c.data == "products")
-async def send_products(call: types.CallbackQuery):
-    await call.message.answer_document(FSInputFile("files/products.pdf"))
-    await call.answer()
 
 # ================== FLASK ==================
 
@@ -168,3 +149,4 @@ async def run_bot():
 if __name__ == "__main__":
     threading.Thread(target=run_flask).start()
     asyncio.run(run_bot())
+``
