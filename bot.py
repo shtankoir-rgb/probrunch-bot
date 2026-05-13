@@ -89,6 +89,18 @@ async def broadcast_command(message: types.Message):
         "Він буде надісланий ВСІМ користувачам."
     )
 
+# ================== STATS ==================
+
+@dp.message(Command("stats"))
+async def stats_command(message: types.Message):
+    if message.from_user.id not in MODERATOR_IDS:
+        return
+
+    users = load_users()
+    await message.answer(
+        f"👥 У боті зараз {len(users)} учасників"
+    )
+
 # ================== MAIN HANDLER ==================
 
 @dp.message()
@@ -98,7 +110,7 @@ async def handle_messages(message: types.Message):
 
     save_user(user_id)
 
-    # --- BROADCAST TEXT ---
+    # --- BROADCAST ---
     if user_id in waiting_for_broadcast:
         waiting_for_broadcast.remove(user_id)
         users = load_users()
@@ -114,7 +126,7 @@ async def handle_messages(message: types.Message):
         await message.answer(f"✅ Розсилка надіслана {sent} користувачам.")
         return
 
-    # --- ПИТАННЯ / ВІДПОВІДІ ---
+    # --- ПИТАННЯ ---
     if "Питання" in text:
         if user_id in waiting_for_question:
             return
@@ -136,7 +148,7 @@ async def handle_messages(message: types.Message):
                 f"{message.from_user.full_name}\n"
                 f"(id: {user_id})\n\n"
                 f"{text}\n\n"
-                f"⬇️ Щоб відповісти гостю, натисніть REPLY на це повідомлення"
+                f"⬇️ Щоб відповісти гостю, натисніть REPLY"
             )
 
         await message.answer("✅ Дякуємо! Питання передано модераторам.")
@@ -152,7 +164,7 @@ async def handle_messages(message: types.Message):
         await message.answer(f"📍 Локація заходу:\n{MAP_LINK}")
         return
 
-    # --- КОРИСНА ІНФОРМАЦІЯ (ЗАГЛУШКА) ---
+    # --- КОРИСНА ІНФОРМАЦІЯ ---
     if "Корисна" in text:
         await message.answer(
             "🍷 Невдовзі тут з'явиться корисна інформація.\n"
@@ -176,7 +188,7 @@ async def handle_messages(message: types.Message):
             except:
                 pass
 
-# ================== FLASK (RENDER FREE) ==================
+# ================== FLASK ==================
 
 app = Flask(__name__)
 
